@@ -13,7 +13,7 @@ function CVUpload({ onExtracted }) {
     formData.append("file", file);
 
     try {
-      const res = await axios.post("http://localhost:8000/upload-cv", formData, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/upload-cv`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setCvText(res.data.text);
