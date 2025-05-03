@@ -15,7 +15,7 @@ function QuestionBox({ cvText, track }) {
   const loadQuestion = async (currentHistory) => {
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:8000/next-question", {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/next-question`, {
         track: track,
         cv_text: cvText,
         history: currentHistory,
@@ -33,7 +33,7 @@ function QuestionBox({ cvText, track }) {
     if (!text) return;
     try {
       const res = await axios.post(
-        "http://localhost:8000/speak",
+        `${import.meta.env.VITE_API_URL}/speak`,
         { text },
         { responseType: "blob" }
       );
@@ -78,7 +78,7 @@ function QuestionBox({ cvText, track }) {
     const formData = new FormData();
     formData.append("file", blob, "recording.wav");
 
-    const res = await axios.post("http://localhost:8000/transcribe", formData, {
+    const res = await axios.post(`${import.meta.env.VITE_API_URL}/transcribe`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     setAnswer(res.data.text);
