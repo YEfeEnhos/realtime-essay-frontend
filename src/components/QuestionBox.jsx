@@ -46,7 +46,9 @@ function QuestionBox({ cvText, track }) {
         history: [],
         theme_counts: {},
         current_theme: "",
-      });
+        is_rapid_fire: true,        // ✅ This line is required!
+        academic_fields: []         // optional but consistent with your backend
+      });      
       const initialQ = `Looks like ${res.data.current_theme} might be your main interest. Could you tell me about three or four of your favourite subjects, related or not to that interest? Why do you like them?`;
       setQuestion(initialQ);
       speakQuestion(initialQ);

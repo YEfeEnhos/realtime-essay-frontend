@@ -1,0 +1,20 @@
+PRESET_THEMES = [
+    "Overcoming rigid expectations & redefining success",
+    "Heritage & family history as a source of purpose",
+    "Immigrant / refugee identity & cultural adaptation",
+    "Venturing beyond the comfort‑zone (geographic or personal)",
+    "Evolving concept of home & belonging",
+    "Interdisciplinary curiosity — bridging disparate fields",
+    "Craftsmanship / entrepreneurship as self‑expression",
+    "Social‑justice & advocacy (racism, refugees, education equity)",
+    "Leadership / mentoring younger peers",
+    "Resilience in the face of personal adversity",
+    "Mind–body wellbeing & self‑care",
+    "Intrinsic love of learning & intellectual independence",
+    "Seeing patterns & connections in everyday life",
+    "Purpose, legacy & impact‑driven research",
+    "Creativity as personal voice",
+    "Embracing uncertainty & adaptability",
+    "Privilege, gratitude & 'giving back'",
+    "Identity & self‑worth beyond external validation"
+]
