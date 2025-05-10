@@ -26,8 +26,8 @@ function CVUpload({ onExtracted }) {
   };
 
   const handleSkip = () => {
-    setCvText("");
-    onExtracted(""); // proceed with empty CV
+    setCvText("No CV provided");
+    onExtracted("No CV provided"); // proceed with empty CV
   };
 
   return (
