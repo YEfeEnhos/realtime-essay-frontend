@@ -9,25 +9,14 @@ function QuestionBox({ cvText, track }) {
   const [loading, setLoading] = useState(false);
   const [finished, setFinished] = useState(false);
   const [started, setStarted] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState("");
+  const [themeCounts, setThemeCounts] = useState({});
+  const [mode, setMode] = useState("rapid"); // 'rapid' or 'theme'
+  const [subjectIndex, setSubjectIndex] = useState(0);
+  const [subjects, setSubjects] = useState([]);
+  const [awaitingSubjectApproval, setAwaitingSubjectApproval] = useState(false);
 
   const audioRef = useRef(null);
-
-  const loadQuestion = async (currentHistory) => {
-    setLoading(true);
-    try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/next-question`, {
-        track: track,
-        cv_text: cvText,
-        history: currentHistory,
-      });
-
-      const newQuestion = res.data.question;
-      setQuestion(newQuestion);
-    } catch (error) {
-      console.error("Error loading question:", error);
-    }
-    setLoading(false);
-  };
 
   const speakQuestion = async (text) => {
     if (!text) return;
@@ -44,13 +33,35 @@ function QuestionBox({ cvText, track }) {
         audioRef.current.play();
       }
     } catch (error) {
-      console.error("Error speaking question:", error);
+      console.error("Error in TTS:", error);
+    }
+  };
+
+  const fetchInitialSubjects = async () => {
+    const prompt = `This is the student's CV:\n${cvText}\n\nExtract up to three likely academic subjects (e.g. math, biology, computer science) they may be most interested in studying in college. Return them as a comma-separated list only.`;
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/next-question`, {
+        track,
+        cv_text: cvText,
+        history: [],
+        theme_counts: {},
+        current_theme: "",
+      });
+      const initialQ = `Looks like ${res.data.current_theme} might be your main interest. Could you tell me about three or four of your favourite subjects, related or not to that interest? Why do you like them?`;
+      setQuestion(initialQ);
+      speakQuestion(initialQ);
+    } catch (err) {
+      console.error("Error extracting academic subjects:", err);
     }
   };
 
   useEffect(() => {
     if (!started) {
-      loadQuestion([]);
+      if (track === "Academic Interests") {
+        fetchInitialSubjects();
+      } else {
+        loadNextQuestion([]);
+      }
       setStarted(true);
     }
   }, [started]);
@@ -60,6 +71,26 @@ function QuestionBox({ cvText, track }) {
       speakQuestion(question);
     }
   }, [question, finished]);
+
+  const loadNextQuestion = async (currentHistory) => {
+    setLoading(true);
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/next-question`, {
+        track,
+        cv_text: cvText,
+        history: currentHistory,
+        theme_counts: themeCounts,
+        current_theme: currentTheme,
+      });
+
+      setQuestion(res.data.question);
+      setCurrentTheme(res.data.current_theme);
+      setThemeCounts(res.data.theme_counts);
+    } catch (err) {
+      console.error("Failed to load question", err);
+    }
+    setLoading(false);
+  };
 
   const handleSubmit = async () => {
     const updatedHistory = [...history, { question, answer }];
@@ -71,13 +102,39 @@ function QuestionBox({ cvText, track }) {
       return;
     }
 
-    await loadQuestion(updatedHistory);
+    if (mode === "rapid" && subjects.length > 0 && !awaitingSubjectApproval) {
+      const subject = subjects[subjectIndex];
+      const followUp = [
+        `How have you pursued your interest in ${subject} in school or summer programs?`,
+        `Looks like you've done something related to ${subject}. Tell me more.`,
+        `How have you explored ${subject} outside the classroom — any projects or research?`
+      ];
+      if (subjectIndex < subjects.length - 1) {
+        setSubjectIndex(subjectIndex + 1);
+        setAwaitingSubjectApproval(true);
+        const q = `Can we move on to the next subject: ${subjects[subjectIndex + 1]}?`;
+        setQuestion(q);
+        speakQuestion(q);
+        return;
+      } else {
+        setMode("theme");
+      }
+    }
+
+    await loadNextQuestion(updatedHistory);
+  };
+
+  const handleYesToSubject = () => {
+    setAwaitingSubjectApproval(false);
+    const subject = subjects[subjectIndex];
+    const q = `Great! Let’s talk about ${subject}. How have you explored this subject in or outside school?`;
+    setQuestion(q);
+    speakQuestion(q);
   };
 
   const handleAudioUpload = async (blob) => {
     const formData = new FormData();
-    formData.append("file", blob, "recording.wav");
-
+    formData.append("file", blob, "audio.wav");
     const res = await axios.post(`${import.meta.env.VITE_API_URL}/transcribe`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
@@ -85,23 +142,19 @@ function QuestionBox({ cvText, track }) {
   };
 
   const downloadTranscript = () => {
-    let content = `🎓 College Essay Interview Transcript\n\n`;
-    history.forEach((entry, index) => {
-      content += `Question ${index + 1}: ${entry.question}\n`;
-      content += `Answer ${index + 1}: ${entry.answer}\n\n`;
+    let content = `🎓 Interview Transcript\n\n`;
+    history.forEach((entry, i) => {
+      content += `Q${i + 1}: ${entry.question}\nA${i + 1}: ${entry.answer}\n\n`;
     });
-
-    const element = document.createElement("a");
     const file = new Blob([content], { type: "text/plain" });
-    element.href = URL.createObjectURL(file);
-    element.download = "interview_transcript.txt";
-    document.body.appendChild(element);
-    element.click();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(file);
+    a.download = "interview.txt";
+    a.click();
   };
 
   const handleAbort = () => {
     setFinished(true);
-    setTimeout(downloadTranscript, 500); // Slight delay for UI to update
   };
 
   return (
@@ -112,55 +165,42 @@ function QuestionBox({ cvText, track }) {
         <p>Loading next question...</p>
       ) : finished ? (
         <>
-          <p style={{ fontSize: "1.2rem" }}>
-            🎯 Thank you for the conversation! You’ve completed the interview.
-          </p>
-          <button onClick={downloadTranscript}>
-            📥 Download Your Interview
-          </button>
+          <p>🎯 Thank you for the conversation! You’ve completed the interview.</p>
+          <button onClick={downloadTranscript}>📥 Download Interview</button>
         </>
       ) : (
         <>
-          <p style={{ fontSize: "1.2rem" }}>{question}</p>
+          <p>{question}</p>
+          <audio ref={audioRef} controls style={{ margin: "1rem 0" }} />
 
-          <audio ref={audioRef} controls style={{ marginTop: "1rem" }} />
+          {awaitingSubjectApproval && (
+            <button onClick={handleYesToSubject}>Yes, move on to next subject</button>
+          )}
 
-          <div style={{ marginTop: "1rem", marginBottom: "1rem" }}>
+          <div>
             <ReactMediaRecorder
               audio
               render={({ status, startRecording, stopRecording, mediaBlobUrl }) => (
                 <div>
                   <p>{status === "recording" ? "Recording..." : ""}</p>
-                  <button
-                    onClick={() => {
-                      startRecording();
-                    }}
-                    disabled={status === "recording"}
-                  >
-                    🎙️ Start Recording
+                  <button onClick={startRecording} disabled={status === "recording"}>
+                    🎙 Start Recording
                   </button>
-                  <button
-                    onClick={() => {
-                      stopRecording();
-                    }}
-                    disabled={status !== "recording"}
-                  >
+                  <button onClick={stopRecording} disabled={status !== "recording"}>
                     🛑 Stop Recording
                   </button>
-
                   {mediaBlobUrl && (
-                    <div style={{ marginTop: "10px" }}>
+                    <>
                       <audio src={mediaBlobUrl} controls />
-                      <br />
                       <button
                         onClick={async () => {
                           const blob = await fetch(mediaBlobUrl).then((r) => r.blob());
                           await handleAudioUpload(blob);
                         }}
                       >
-                        📤 Transcribe Answer
+                        📤 Transcribe
                       </button>
-                    </div>
+                    </>
                   )}
                 </div>
               )}
@@ -170,27 +210,15 @@ function QuestionBox({ cvText, track }) {
           <textarea
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
-            rows={5}
-            placeholder="Write or edit your answer here..."
+            placeholder="Type or edit your answer here"
+            rows={4}
           />
 
           <button onClick={handleSubmit} disabled={!answer.trim()}>
             Submit Answer
           </button>
-
-          <button
-            onClick={handleAbort}
-            style={{
-              marginTop: "1.5rem",
-              backgroundColor: "#e74c3c",
-              color: "white",
-              padding: "0.6rem 1.2rem",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer"
-            }}
-          >
-            🛑 Abort Interview & Download
+          <button onClick={handleAbort} style={{ marginLeft: "1rem", color: "red" }}>
+            Abort Interview
           </button>
         </>
       )}
