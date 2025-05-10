@@ -26,6 +26,7 @@ function CVUpload({ onExtracted }) {
   };
 
   const handleSkip = () => {
+    setCvText("");
     onExtracted(""); // proceed with empty CV
   };
 
