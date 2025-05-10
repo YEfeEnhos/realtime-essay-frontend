@@ -25,11 +25,20 @@ function CVUpload({ onExtracted }) {
     }
   };
 
+  const handleSkip = () => {
+    onExtracted(""); // proceed with empty CV
+  };
+
   return (
     <div className="card">
       <h1>📄 Upload Your CV</h1>
       <input type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files[0])} />
-      <button onClick={handleUpload}>{loading ? "Uploading..." : "Upload"}</button>
+      <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+        <button onClick={handleUpload} disabled={loading}>
+          {loading ? "Uploading..." : "Upload"}
+        </button>
+        <button onClick={handleSkip}>Skip this step</button>
+      </div>
 
       {cvText && (
         <>
