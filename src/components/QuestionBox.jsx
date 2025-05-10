@@ -48,14 +48,11 @@ function QuestionBox({ cvText, track }) {
 
   useEffect(() => {
     if (!started) {
-      if (track === "Academic Interests") {
-        fetchInitialSubjects();
-      } else {
-        loadNextQuestion([]);
-      }
+      fetchInitialSubjects();
       setStarted(true);
     }
   }, [started]);
+  
 
   useEffect(() => {
     if (question && !finished) {
