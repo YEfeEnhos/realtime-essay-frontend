@@ -12,9 +12,6 @@ function QuestionBox({ cvText, track }) {
   const [currentTheme, setCurrentTheme] = useState("");
   const [themeCounts, setThemeCounts] = useState({});
   const [mode, setMode] = useState("rapid"); // 'rapid' or 'theme'
-  const [subjectIndex, setSubjectIndex] = useState(0);
-  const [subjects, setSubjects] = useState([]);
-  const [awaitingSubjectApproval, setAwaitingSubjectApproval] = useState(false);
 
   const audioRef = useRef(null);
 
@@ -37,37 +34,14 @@ function QuestionBox({ cvText, track }) {
     }
   };
 
-  const fetchInitialSubjects = async () => {
-    try {
-      await loadNextQuestion([]);  // just fetch the first question via backend
-    } catch (err) {
-      console.error("Error extracting academic subjects:", err);
-    }
-  };
-  
-
-  useEffect(() => {
-    if (!started) {
-      fetchInitialSubjects();
-      setStarted(true);
-    }
-  }, [started]);
-  
-
-  useEffect(() => {
-    if (question && !finished) {
-      speakQuestion(question);
-    }
-  }, [question, finished]);
-
   const loadNextQuestion = async (currentHistory) => {
-    console.log("Backend response:", res.data);
     setLoading(true);
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_URL}/next-question`, {
         track,
         cv_text: cvText,
         history: currentHistory,
+        is_rapid_fire: mode === "rapid",
         theme_counts: themeCounts,
         current_theme: currentTheme,
       });
@@ -81,6 +55,19 @@ function QuestionBox({ cvText, track }) {
     setLoading(false);
   };
 
+  useEffect(() => {
+    if (!started) {
+      loadNextQuestion([]);
+      setStarted(true);
+    }
+  }, [started]);
+
+  useEffect(() => {
+    if (question && !finished) {
+      speakQuestion(question);
+    }
+  }, [question, finished]);
+
   const handleSubmit = async () => {
     const updatedHistory = [...history, { question, answer }];
     setHistory(updatedHistory);
@@ -91,34 +78,11 @@ function QuestionBox({ cvText, track }) {
       return;
     }
 
-    if (mode === "rapid" && subjects.length > 0 && !awaitingSubjectApproval) {
-      const subject = subjects[subjectIndex];
-      const followUp = [
-        `How have you pursued your interest in ${subject} in school or summer programs?`,
-        `Looks like you've done something related to ${subject}. Tell me more.`,
-        `How have you explored ${subject} outside the classroom — any projects or research?`
-      ];
-      if (subjectIndex < subjects.length - 1) {
-        setSubjectIndex(subjectIndex + 1);
-        setAwaitingSubjectApproval(true);
-        const q = `Can we move on to the next subject: ${subjects[subjectIndex + 1]}?`;
-        setQuestion(q);
-        speakQuestion(q);
-        return;
-      } else {
-        setMode("theme");
-      }
+    if (mode === "rapid" && updatedHistory.length >= 3) {
+      setMode("theme"); // switch mode after a few factual questions
     }
 
     await loadNextQuestion(updatedHistory);
-  };
-
-  const handleYesToSubject = () => {
-    setAwaitingSubjectApproval(false);
-    const subject = subjects[subjectIndex];
-    const q = `Great! Let’s talk about ${subject}. How have you explored this subject in or outside school?`;
-    setQuestion(q);
-    speakQuestion(q);
   };
 
   const handleAudioUpload = async (blob) => {
@@ -161,10 +125,6 @@ function QuestionBox({ cvText, track }) {
         <>
           <p>{question}</p>
           <audio ref={audioRef} controls style={{ margin: "1rem 0" }} />
-
-          {awaitingSubjectApproval && (
-            <button onClick={handleYesToSubject}>Yes, move on to next subject</button>
-          )}
 
           <div>
             <ReactMediaRecorder
