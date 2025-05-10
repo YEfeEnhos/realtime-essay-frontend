@@ -90,10 +90,6 @@ function QuestionBox({ cvText, track }) {
       return;
     }
 
-    if (mode === "rapid" && updatedHistory.length >= 3) {
-      setMode("theme"); // switch mode after a few factual questions
-    }
-
     await loadNextQuestion(updatedHistory);
   };
 
