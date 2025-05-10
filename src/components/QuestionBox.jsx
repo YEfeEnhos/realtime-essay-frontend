@@ -41,11 +41,13 @@ function QuestionBox({ cvText, track }) {
         track,
         cv_text: cvText,
         history: currentHistory,
-        is_rapid_fire: mode === "rapid",
         theme_counts: themeCounts,
         current_theme: currentTheme,
+        is_rapid_fire: mode === "rapid",  // <-- include this for accurate backend handling
       });
-
+  
+      console.log("Backend response:", res.data); // ✅ moved here
+  
       setQuestion(res.data.question);
       setCurrentTheme(res.data.current_theme);
       setThemeCounts(res.data.theme_counts);
@@ -54,6 +56,7 @@ function QuestionBox({ cvText, track }) {
     }
     setLoading(false);
   };
+  
 
   useEffect(() => {
     if (!started) {
