@@ -43,12 +43,21 @@ function QuestionBox({ cvText, track }) {
         history: currentHistory,
         theme_counts: themeCounts,
         current_theme: currentTheme,
-        is_rapid_fire: mode === "rapid",  // <-- include this for accurate backend handling
+        is_rapid_fire: mode === "rapid",
       });
   
-      console.log("Backend response:", res.data); // ✅ moved here
+      const nextQ = res.data.question;
+      console.log("Backend response:", res.data);
   
-      setQuestion(res.data.question);
+      // Automatically switch mode if GPT says it's time to move on
+      if (
+        nextQ.toLowerCase().includes("i now have enough information to move on") ||
+        nextQ.toLowerCase().includes("let’s now move to broader questions")
+      ) {
+        setMode("theme");
+      }
+  
+      setQuestion(nextQ);
       setCurrentTheme(res.data.current_theme);
       setThemeCounts(res.data.theme_counts);
     } catch (err) {
