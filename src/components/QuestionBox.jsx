@@ -85,7 +85,7 @@ function QuestionBox({ cvText, track }) {
     setHistory(updatedHistory);
     setAnswer("");
 
-    if (updatedHistory.length >= 8) {
+    if (updatedHistory.length >= 20) {
       setFinished(true);
       return;
     }
