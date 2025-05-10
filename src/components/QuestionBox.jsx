@@ -99,6 +99,11 @@ function QuestionBox({ cvText, track }) {
     element.click();
   };
 
+  const handleAbort = () => {
+    setFinished(true);
+    setTimeout(downloadTranscript, 500); // Slight delay for UI to update
+  };
+
   return (
     <div className="card">
       <h2>🎤 Interview</h2>
@@ -171,6 +176,21 @@ function QuestionBox({ cvText, track }) {
 
           <button onClick={handleSubmit} disabled={!answer.trim()}>
             Submit Answer
+          </button>
+
+          <button
+            onClick={handleAbort}
+            style={{
+              marginTop: "1.5rem",
+              backgroundColor: "#e74c3c",
+              color: "white",
+              padding: "0.6rem 1.2rem",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer"
+            }}
+          >
+            🛑 Abort Interview & Download
           </button>
         </>
       )}
