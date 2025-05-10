@@ -38,24 +38,13 @@ function QuestionBox({ cvText, track }) {
   };
 
   const fetchInitialSubjects = async () => {
-    const prompt = `This is the student's CV:\n${cvText}\n\nExtract up to three likely academic subjects (e.g. math, biology, computer science) they may be most interested in studying in college. Return them as a comma-separated list only.`;
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/next-question`, {
-        track,
-        cv_text: cvText,
-        history: [],
-        is_rapid_fire: true, 
-        theme_counts: {},
-        current_theme: "",       
-        academic_fields: []        
-      });      
-      const initialQ = `Looks like ${res.data.current_theme} might be your main interest. Could you tell me about three or four of your favourite subjects, related or not to that interest? Why do you like them?`;
-      setQuestion(initialQ);
-      speakQuestion(initialQ);
+      await loadNextQuestion([]);  // just fetch the first question via backend
     } catch (err) {
       console.error("Error extracting academic subjects:", err);
     }
   };
+  
 
   useEffect(() => {
     if (!started) {
