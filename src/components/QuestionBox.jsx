@@ -69,6 +69,9 @@ function QuestionBox({ cvText, track }) {
 
   useEffect(() => {
     if (!started) {
+      if (track === "Family & Background") {
+        setMode("theme");  // Skip rapid fire for this track
+      }
       loadNextQuestion([]);
       setStarted(true);
     }
@@ -85,7 +88,7 @@ function QuestionBox({ cvText, track }) {
     setHistory(updatedHistory);
     setAnswer("");
 
-    if (updatedHistory.length >= 20) {
+    if (updatedHistory.length >= 25) {
       setFinished(true);
       return;
     }
