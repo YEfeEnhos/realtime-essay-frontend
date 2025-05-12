@@ -60,6 +60,11 @@ function QuestionBox({ cvText, track }) {
       setQuestion(nextQ);
       setCurrentTheme(res.data.current_theme);
       setThemeCounts(res.data.theme_counts);
+
+      if (res.data.question.includes("Thank you. That’s the end of the extracurricular interview!")) {
+        setFinished(true);
+      }      
+
     } catch (err) {
       console.error("Failed to load question", err);
     }
