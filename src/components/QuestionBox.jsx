@@ -12,6 +12,8 @@ function QuestionBox({ cvText, track }) {
   const [currentTheme, setCurrentTheme] = useState("");
   const [themeCounts, setThemeCounts] = useState({});
   const [mode, setMode] = useState("rapid"); // 'rapid' or 'theme'
+  const [deepQuestionCount, setDeepQuestionCount] = useState(0);
+
 
   const audioRef = useRef(null);
 
@@ -93,10 +95,19 @@ function QuestionBox({ cvText, track }) {
     setHistory(updatedHistory);
     setAnswer("");
 
-    if (updatedHistory.length >= 25) {
-      setFinished(true);
-      return;
+    if (mode === "theme") {
+      const nextCount = deepQuestionCount + 1;
+      setDeepQuestionCount(nextCount);
+    
+      if (
+        (track === "Academic Interests" && nextCount >= 10) ||
+        (track === "Family & Background" && nextCount >= 25)
+      ) {
+        setFinished(true);
+        return;
+      }
     }
+    
 
     await loadNextQuestion(updatedHistory);
   };
