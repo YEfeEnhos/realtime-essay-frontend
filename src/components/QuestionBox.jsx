@@ -38,7 +38,7 @@ function QuestionBox({ cvText, track }) {
     }
   };
 
-  const loadNextQuestion = async (currentHistory, backgroundIndexParam = backgroundIndex) => {
+  const loadNextQuestion = async (currentHistory, backgroundIndexOverride = backgroundIndex) => {
     setLoading(true);
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_URL}/next-question`, {
@@ -48,13 +48,12 @@ function QuestionBox({ cvText, track }) {
         theme_counts: themeCounts,
         current_theme: currentTheme,
         is_rapid_fire: mode === "rapid",
-        background_index: backgroundIndexParam,
+        background_index: backgroundIndexOverride,
       });
   
       const nextQ = res.data.question;
       console.log("Backend response:", res.data);
   
-      // Automatically switch mode if GPT says it's time to move on
       if (
         nextQ.toLowerCase().includes("i now have enough information to move on") ||
         nextQ.toLowerCase().includes("let’s now move to broader questions")
@@ -65,16 +64,16 @@ function QuestionBox({ cvText, track }) {
       setQuestion(nextQ);
       setCurrentTheme(res.data.current_theme);
       setThemeCounts(res.data.theme_counts);
-
-      if (res.data.question.includes("Thank you. That’s the end of the extracurricular interview!")) {
+  
+      if (res.data.question.includes("That’s the end of the background interview")) {
         setFinished(true);
-      }      
-
+      }
     } catch (err) {
       console.error("Failed to load question", err);
     }
     setLoading(false);
   };
+  
   
 
   useEffect(() => {
@@ -102,7 +101,7 @@ function QuestionBox({ cvText, track }) {
   
     if (track === "Family & Background") {
       nextBackgroundIndex = backgroundIndex + 1;
-      setBackgroundIndex(nextBackgroundIndex);
+      setBackgroundIndex(nextBackgroundIndex); // update state for later use
     }
   
     if (mode === "theme") {
@@ -118,8 +117,9 @@ function QuestionBox({ cvText, track }) {
       }
     }
   
-    await loadNextQuestion(updatedHistory, nextBackgroundIndex);
+    await loadNextQuestion(updatedHistory, nextBackgroundIndex); // pass updated index
   };
+  
   
 
   const handleAudioUpload = async (blob) => {
