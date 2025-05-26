@@ -13,6 +13,8 @@ function QuestionBox({ cvText, track }) {
   const [themeCounts, setThemeCounts] = useState({});
   const [mode, setMode] = useState("rapid"); // 'rapid' or 'theme'
   const [deepQuestionCount, setDeepQuestionCount] = useState(0);
+  const [backgroundIndex, setBackgroundIndex] = useState(0);
+
 
 
   const audioRef = useRef(null);
@@ -46,6 +48,7 @@ function QuestionBox({ cvText, track }) {
         theme_counts: themeCounts,
         current_theme: currentTheme,
         is_rapid_fire: mode === "rapid",
+        background_index: backgroundIndex,
       });
   
       const nextQ = res.data.question;
@@ -106,6 +109,10 @@ function QuestionBox({ cvText, track }) {
         setFinished(true);
         return;
       }
+    }
+
+    if (track === "Family & Background") {
+      setBackgroundIndex(backgroundIndex + 1);
     }
     
 
