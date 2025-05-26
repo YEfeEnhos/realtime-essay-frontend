@@ -38,7 +38,7 @@ function QuestionBox({ cvText, track }) {
     }
   };
 
-  const loadNextQuestion = async (currentHistory) => {
+  const loadNextQuestion = async (currentHistory, backgroundIndexParam = backgroundIndex) => {
     setLoading(true);
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_URL}/next-question`, {
@@ -48,7 +48,7 @@ function QuestionBox({ cvText, track }) {
         theme_counts: themeCounts,
         current_theme: currentTheme,
         is_rapid_fire: mode === "rapid",
-        background_index: backgroundIndex,
+        background_index: backgroundIndexParam,
       });
   
       const nextQ = res.data.question;
@@ -92,16 +92,23 @@ function QuestionBox({ cvText, track }) {
       speakQuestion(question);
     }
   }, [question, finished]);
-
+  
   const handleSubmit = async () => {
     const updatedHistory = [...history, { question, answer }];
     setHistory(updatedHistory);
     setAnswer("");
-
+  
+    let nextBackgroundIndex = backgroundIndex;
+  
+    if (track === "Family & Background") {
+      nextBackgroundIndex = backgroundIndex + 1;
+      setBackgroundIndex(nextBackgroundIndex);
+    }
+  
     if (mode === "theme") {
       const nextCount = deepQuestionCount + 1;
       setDeepQuestionCount(nextCount);
-    
+  
       if (
         (track === "Academic Interests" && nextCount >= 10) ||
         (track === "Family & Background" && nextCount >= 25)
@@ -110,14 +117,10 @@ function QuestionBox({ cvText, track }) {
         return;
       }
     }
-
-    if (track === "Family & Background") {
-      setBackgroundIndex(backgroundIndex + 1);
-    }
-    
-
-    await loadNextQuestion(updatedHistory);
+  
+    await loadNextQuestion(updatedHistory, nextBackgroundIndex);
   };
+  
 
   const handleAudioUpload = async (blob) => {
     const formData = new FormData();
