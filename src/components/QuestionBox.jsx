@@ -14,6 +14,8 @@ function QuestionBox({ cvText, track }) {
   const [mode, setMode] = useState("rapid"); // 'rapid' or 'theme'
   const [deepQuestionCount, setDeepQuestionCount] = useState(0);
   const [backgroundIndex, setBackgroundIndex] = useState(0);
+  const [academicIndex, setAcademicIndex] = useState(0);
+
 
 
 
@@ -38,7 +40,7 @@ function QuestionBox({ cvText, track }) {
     }
   };
 
-  const loadNextQuestion = async (currentHistory, backgroundIndexOverride = backgroundIndex) => {
+  const loadNextQuestion = async (currentHistory, backgroundIndexOverride = backgroundIndex, academicIndexOverride = academicIndex) => {
     setLoading(true);
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_URL}/next-question`, {
@@ -49,10 +51,17 @@ function QuestionBox({ cvText, track }) {
         current_theme: currentTheme,
         is_rapid_fire: mode === "rapid",
         background_index: backgroundIndexOverride,
+        academic_index: academicIndexOverride,
       });
   
       const nextQ = res.data.question;
       const tag = res.data.tag || "";
+
+      if (tag === "end_rapid_fire_academic") {
+        setMode("theme");
+        setAcademicIndex(0);  // ✅ Reset academic question index
+        return;               // ✅ Stop here; next render triggers new mode
+      }
 
       console.log("Backend response:", res.data);
   
@@ -67,6 +76,10 @@ function QuestionBox({ cvText, track }) {
 
       setCurrentTheme(res.data.current_theme);
       setThemeCounts(res.data.theme_counts);
+
+      if (res.data.academic_index !== undefined) {
+        setAcademicIndex(res.data.academic_index); // ✅ Update index for next turn
+      }
   
       if (res.data.question.includes("That’s the end of the background interview")) {
         setFinished(true);
@@ -109,13 +122,19 @@ function QuestionBox({ cvText, track }) {
       nextBackgroundIndex = backgroundIndex + 1;
       setBackgroundIndex(nextBackgroundIndex); // update state for later use
     }
+
+    let nextAcademicIndex = academicIndex;
+    if (track === "Academic Interests" && mode === "theme") {
+      nextAcademicIndex = academicIndex + 1;
+      setAcademicIndex(nextAcademicIndex); // ✅ Local update for backend
+    }
   
     if (mode === "theme") {
       const nextCount = deepQuestionCount + 1;
       setDeepQuestionCount(nextCount);
   
       if (
-        (track === "Academic Interests" && nextCount >= 10) ||
+        (track === "Academic Interests" && nextCount >= 9) ||
         (track === "Family & Background" && nextCount >= 25)
       ) {
         setFinished(true);
@@ -123,7 +142,8 @@ function QuestionBox({ cvText, track }) {
       }
     }
   
-    await loadNextQuestion(updatedHistory, nextBackgroundIndex); // pass updated index
+    await loadNextQuestion(updatedHistory, nextBackgroundIndex, nextAcademicIndex);
+
   };
   
   
