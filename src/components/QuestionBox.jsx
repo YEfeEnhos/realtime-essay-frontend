@@ -3,7 +3,7 @@ import axios from "axios";
 import { ReactMediaRecorder } from "react-media-recorder";
 
 function QuestionBox({ cvText, track }) {
-  const [question, setQuestion] = useState("");
+  const [question, setQuestion] = useState({ text: "", tag: "" });
   const [history, setHistory] = useState([]);
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,6 +52,8 @@ function QuestionBox({ cvText, track }) {
       });
   
       const nextQ = res.data.question;
+      const tag = res.data.tag || "";
+
       console.log("Backend response:", res.data);
   
       if (
@@ -61,7 +63,8 @@ function QuestionBox({ cvText, track }) {
         setMode("theme");
       }
   
-      setQuestion(nextQ);
+      setQuestion({ text: nextQ, tag });
+
       setCurrentTheme(res.data.current_theme);
       setThemeCounts(res.data.theme_counts);
   
@@ -87,13 +90,16 @@ function QuestionBox({ cvText, track }) {
   }, [started]);
 
   useEffect(() => {
-    if (question && !finished) {
-      speakQuestion(question);
+    if (question.text && !finished) {
+      speakQuestion(question.text);
     }
   }, [question, finished]);
   
+  
   const handleSubmit = async () => {
-    const updatedHistory = [...history, { question, answer }];
+    const updatedHistory = [...history, { question: question.text, answer, tag: question.tag }];
+
+
     setHistory(updatedHistory);
     setAnswer("");
   
@@ -160,7 +166,8 @@ function QuestionBox({ cvText, track }) {
         </>
       ) : (
         <>
-          <p>{question}</p>
+          <p>{question.text}</p>
+
           <audio ref={audioRef} controls style={{ margin: "1rem 0" }} />
 
           <div>
