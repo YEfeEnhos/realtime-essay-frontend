@@ -159,10 +159,7 @@ function QuestionBox({ cvText, track }) {
     }
 
     let nextAcademicIndex = academicIndex;
-    if (track === "Academic Interests" && mode === "theme") {
-      nextAcademicIndex = academicIndex + 1;
-      setAcademicIndex(nextAcademicIndex); // ✅ Local update for backend
-    }
+
   
     if (mode === "theme") {
       const nextCount = deepQuestionCount + 1;
