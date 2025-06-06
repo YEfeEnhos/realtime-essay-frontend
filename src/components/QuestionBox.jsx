@@ -41,6 +41,18 @@ function QuestionBox({ cvText, track }) {
   };
 
   const loadNextQuestion = async (currentHistory, backgroundIndexOverride = backgroundIndex, academicIndexOverride = academicIndex) => {
+    console.log("▶ Sending request with payload:", {
+      track,
+      cv_text: cvText,
+      history: currentHistory,
+      theme_counts: themeCounts,
+      current_theme: currentTheme,
+      is_rapid_fire: mode === "rapid",
+      background_index: backgroundIndexOverride,
+      academic_index: academicIndexOverride,
+    });
+  
+
     setLoading(true);
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_URL}/next-question`, {
@@ -53,11 +65,25 @@ function QuestionBox({ cvText, track }) {
         background_index: backgroundIndexOverride,
         academic_index: academicIndexOverride,
       });
+      console.log("✅ Backend response received:", res.data);
+
+      if (!res.data || !res.data.question) {
+        console.error("🚨 Invalid response from backend:", res.data);
+        setLoading(false);
+        return;
+      }
+      
+
+
   
       const nextQ = res.data.question;
       const tag = res.data.tag || "";
 
+      
+
       if (tag === "end_rapid_fire_academic") {
+        console.log("⚠️ Tag detected: end_rapid_fire_academic — switching to theme mode");
+
         setMode("theme");
         setAcademicIndex(0);  // ✅ Reset academic question index
         setLoading(false);
@@ -72,11 +98,17 @@ function QuestionBox({ cvText, track }) {
       ) {
         setMode("theme");
       }
-  
+
+      console.log("🧠 Setting question text to:", nextQ);
       setQuestion({ text: nextQ, tag });
 
-      setCurrentTheme(res.data.current_theme);
-      setThemeCounts(res.data.theme_counts);
+      try {
+        setCurrentTheme(res.data.current_theme || "");
+        setThemeCounts(res.data.theme_counts || {});
+      } catch (e) {
+        console.error("❌ Error updating theme state:", e);
+      }
+      
 
       if (res.data.academic_index !== undefined) {
         setAcademicIndex(res.data.academic_index); // ✅ Update index for next turn
@@ -88,6 +120,7 @@ function QuestionBox({ cvText, track }) {
     } catch (err) {
       console.error("Failed to load question", err);
     }
+    console.log("✅ Finished processing question. UI should now show question.");
     setLoading(false);
   };
   
@@ -111,6 +144,7 @@ function QuestionBox({ cvText, track }) {
   
   
   const handleSubmit = async () => {
+
     const updatedHistory = [...history, { question: question.text, answer, tag: question.tag }];
 
 
@@ -142,7 +176,8 @@ function QuestionBox({ cvText, track }) {
         return;
       }
     }
-  
+    console.log("📚 Submitting answer. Updated history:", updatedHistory);
+
     await loadNextQuestion(updatedHistory, nextBackgroundIndex, nextAcademicIndex);
 
   };
