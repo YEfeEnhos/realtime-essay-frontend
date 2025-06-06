@@ -60,6 +60,7 @@ function QuestionBox({ cvText, track }) {
       if (tag === "end_rapid_fire_academic") {
         setMode("theme");
         setAcademicIndex(0);  // ✅ Reset academic question index
+        setLoading(false);
         return;               // ✅ Stop here; next render triggers new mode
       }
 
